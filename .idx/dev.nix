@@ -8,6 +8,7 @@
     # pkgs.go
     pkgs.python311
     pkgs.python311Packages.pip
+    pkgs.nailgun
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon
   ];
