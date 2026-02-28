@@ -8,6 +8,9 @@ class Config:
     BITRIX_WEBHOOK_URL = os.getenv("BITRIX_WEBHOOK_URL")
     BITRIX_BOT_CODE = os.getenv("BITRIX_BOT_CODE", "knowledge_assistant")
     
+    # URL приложения для регистрации вебхуков (берется из окружения или ставится заглушка)
+    APP_URL = os.getenv("APP_URL", "https://ai-knowledge-bot-577762118407.us-east1.run.app")
+    
     # AI
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")

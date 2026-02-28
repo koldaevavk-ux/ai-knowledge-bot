@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.dockerignore
+chroma_db/
+firebase-debug.log
+.DS_Store
+*.md
