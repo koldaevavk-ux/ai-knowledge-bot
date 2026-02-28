@@ -15,4 +15,4 @@ ai-knowledge-bot/
 ├── chroma_db/               # Векторная база (создастся автоматически)
 ├── requirements.txt
 ├── .env
-└── README.md
+└── README.md# ai-knowledge-bot
