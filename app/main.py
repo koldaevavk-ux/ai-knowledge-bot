@@ -12,73 +12,73 @@ bitrix_handler = BitrixHandler()
 
 @app.on_event("startup")
 async def startup_event():
-    """Запуск приложения"""
     print("🚀 AI Knowledge Bot запущен")
-    # При первом запуске раскомментируйте для регистрации бота:
-    # await bitrix_handler.register_bot()
 
 @app.get("/")
 async def root():
-    return {"status": "AI Knowledge Bot is running", "version": "1.0"}
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
+    return {"status": "AI Knowledge Bot is running", "version": "1.1"}
 
 @app.post("/webhook/message")
 async def handle_message(request: Request, background_tasks: BackgroundTasks):
     """Обработка входящих сообщений от Битрикс24"""
     try:
-        data = await request.json()
-        print(f"📨 Получено сообщение: {data}")
+        # Битрикс присылает данные как form-data, а не JSON
+        form_data = await request.form()
+        data = dict(form_data)
         
-        # Извлекаем данные
         event = data.get("event")
         
         if event == "ONIMBOTMESSAGEADD":
-            message_data = data.get("data", {}).get("PARAMS", {})
+            # Битрикс присылает параметры в плоском формате data[PARAMS][...]
+            user_message = data.get("data[PARAMS][MESSAGE]", "")
+            dialog_id = data.get("data[PARAMS][DIALOG_ID]", "")
+            from_user_id = data.get("data[PARAMS][FROM_USER_ID]", "")
+            bot_id = data.get("data[PARAMS][BOT_ID]", "")
             
-            # Проверяем, что это не сообщение от бота
-            if message_data.get("FROM_USER_ID") == message_data.get("BOT_ID"):
+            # Игнорируем сообщения от самого себя (бота)
+            if from_user_id and bot_id and str(from_user_id) == str(bot_id):
                 return JSONResponse({"status": "ignored - bot message"})
             
-            user_message = message_data.get("MESSAGE", "")
-            dialog_id = message_data.get("DIALOG_ID", "")
-            
             if not user_message or not dialog_id:
-                return JSONResponse({"status": "no message or dialog"})
+                print(f"⚠️ Получены неполные данные: message={user_message}, dialog={dialog_id}")
+                return JSONResponse({"status": "missing data"})
             
-            # Обрабатываем вопрос в фоне
+            print(f"📨 Сообщение от пользователя: {user_message}")
+            
+            # Обрабатываем вопрос в фоне, чтобы Битрикс не ждал
             background_tasks.add_task(
                 process_question,
                 dialog_id,
                 user_message
             )
             
-            return JSONResponse({"status": "processing"})
+            return JSONResponse({"status": "processing started"})
         
-        return JSONResponse({"status": "ok"})
+        return JSONResponse({"status": f"event {event} received but not handled"})
     
     except Exception as e:
         print(f"❌ Ошибка обработки webhook: {e}")
+        # Логируем тело для отладки
+        try:
+            body = await request.body()
+            print(f"DEBUG: Тело запроса: {body.decode()}")
+        except:
+            pass
         return JSONResponse({"status": "error", "message": str(e)})
 
 async def process_question(dialog_id: str, question: str):
     """Обработка вопроса и отправка ответа"""
     try:
-        # Отправляем "печатает..."
+        # 1. Сразу сообщаем пользователю, что начали работу
         await bitrix_handler.send_message(dialog_id, "⏳ Ищу информацию в базе знаний...")
         
-        # Получаем ответ от AI
+        # 2. Получаем ответ от AI
         answer = ai_engine.answer_question(question)
         
-        # Отправляем ответ
+        # 3. Отправляем финальный ответ
         await bitrix_handler.send_message(dialog_id, answer)
         
     except Exception as e:
-        error_msg = f"❌ Извините, произошла ошибка при обработке вашего вопроса: {str(e)}"
+        print(f"❌ Ошибка в process_question: {e}")
+        error_msg = f"❌ Извините, произошла ошибка: {str(e)}"
         await bitrix_handler.send_message(dialog_id, error_msg)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
