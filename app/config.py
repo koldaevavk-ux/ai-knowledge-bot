@@ -22,7 +22,7 @@ class Config:
     CHROMA_PATH = "chroma_db"
     
     # Models
-    EMBEDDING_MODEL = "models/text-embedding-004"
+    EMBEDDING_MODEL = "models/gemini-embedding-001"
     LLM_MODEL = "llama-3.3-70b-versatile"
 
 config = Config()
